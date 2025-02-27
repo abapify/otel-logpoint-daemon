@@ -22,12 +22,6 @@ selection-screen begin of block b03 with frame.
   parameters p_dest type RFCDEST modif id des default 'ABAP2OTEL_MQTT'.
 selection-screen end of block b03.
 
-class lcl_startup_config definition.
-  public section.
-    interfaces zif_otel_daemon_config.
-    interfaces if_serializable_object.
-endclass.
-
 class lcl_app definition.
   public section.
     methods start raising cx_static_check.
@@ -40,10 +34,7 @@ class lcl_app definition.
     methods export raising cx_abap_daemon_error cx_ac_message_type_pcp_error.
 endclass.
 
-class lcl_noop_mqtt_handler definition.
-public section.
-interfaces IF_MQTT_EVENT_HANDLER.
-endclass.
+
 
 
 initialization.
@@ -70,7 +61,8 @@ class lcl_app implementation.
       when x_create.
 
         data(config) = cl_abap_daemon_startup_manager=>create_for_current_program( ).
-        data(daemon_config) = zcl_otel_daemon_config=>set( new lcl_startup_config( ) )  .
+        data(startup_config) = new zcl_otel_daemon_config_mqtt( rfc_destination = p_dest ).
+        data(daemon_config) = zcl_otel_daemon_config=>set( startup_config )  .
 
         try.
 
@@ -197,59 +189,3 @@ class lcl_app implementation.
     lo_handle->send( lo_pcp_message ).
   endmethod.
 endclass.
-
-class lcl_startup_config implementation.
-  method zif_otel_daemon_config~publisher.
-
-    data(client) =
-    cl_mqtt_client_manager=>create_by_destination(
-      exporting
-        i_destination      = conv #( p_dest )
-        i_event_handler    = new lcl_noop_mqtt_handler(  )
-    ).
-
-    data(lo_options) = cl_mqtt_connect_options=>create( ).
-    lo_options->set_client_id( |{ sy-sysid }/{ sy-mandt }| ).
-
-    client->connect(
-      i_mqtt_options =  lo_options                " MQTT connect options
-      i_apc_options  = value #(
-      timeout = 1 )                 " Structure APC connect options
-    ).
-
-    result = new ZCL_OTEL_PUBLISHER_MQTT(
-      topic_name = |abap2otel/traces/{ sy-sysid }/{ sy-mandt }|
-      client = client
-    ).
-
-  endmethod.
-
-endclass.
-
-CLASS lcl_noop_mqtt_handler IMPLEMENTATION.
-
-  METHOD if_mqtt_event_handler~on_connect.
-
-  ENDMETHOD.
-
-  METHOD if_mqtt_event_handler~on_disconnect.
-
-  ENDMETHOD.
-
-  METHOD if_mqtt_event_handler~on_message.
-
-  ENDMETHOD.
-
-  METHOD if_mqtt_event_handler~on_publish.
-
-  ENDMETHOD.
-
-  METHOD if_mqtt_event_handler~on_subscribe.
-
-  ENDMETHOD.
-
-  METHOD if_mqtt_event_handler~on_unsubscribe.
-
-  ENDMETHOD.
-
-ENDCLASS.
