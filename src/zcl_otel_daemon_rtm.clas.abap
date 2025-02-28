@@ -158,7 +158,8 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
     check me->config is bound.
 
     data(publisher) = me->config->publisher( ).
-    data(entry_handler) = new zcl_otel_rtm_handler( publisher = publisher ).
+
+    data(entry_handler) = new zcl_otel_rtm_handler( stream = publisher ).
 
     zcl_rtm_iterator=>start(
        entry_handler            = entry_handler
