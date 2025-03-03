@@ -13,11 +13,6 @@
    </VSEOCLASS>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
-     <CMPNAME>CONFIG</CMPNAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Daemon config</DESCRIPT>
-    </SEOCOMPOTX>
-    <SEOCOMPOTX>
      <CMPNAME>CONSTRUCTOR</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>CONSTRUCTOR</DESCRIPT>
@@ -28,6 +23,14 @@
      <DESCRIPT>ABAP Daemon framework: Context base Int. (do not implement)</DESCRIPT>
     </SEOCOMPOTX>
    </DESCRIPTIONS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>SET_TIMER</CMPNAME>
+     <SCONAME>CONTEXT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>ABAP Daemon framework Context interface (do not implement)</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
   </asx:values>
  </asx:abap>
 </abapGit>

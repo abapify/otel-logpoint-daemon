@@ -29,18 +29,22 @@ class zcl_otel_daemon_rtm definition
     methods if_abap_daemon_extension~on_system_shutdown
         redefinition .
   protected section.
-  private section.
+private section.
 
-    data config type ref to zif_otel_daemon_config .
-    data context type ref to if_abap_daemon_context_base .
+  "data CONFIG type ref to ZIF_OTEL_DAEMON_CONFIG .
+  data CONTEXT type ref to IF_ABAP_DAEMON_CONTEXT .
 
-    methods export
-      raising
-        cx_static_check .
 
-    methods set_timer
-      raising
-        cx_abap_timer_error .
+  methods EXPORT
+    importing config type ref to zif_otel_daemon_config
+    raising
+      CX_STATIC_CHECK .
+
+  methods SET_TIMER
+    importing
+      !CONTEXT type ref to IF_ABAP_DAEMON_CONTEXT
+    raising
+      CX_ABAP_TIMER_ERROR .
 ENDCLASS.
 
 
@@ -55,7 +59,7 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
 
     try.
 
-        me->config = zcl_otel_daemon_config=>get( i_context_base->get_start_parameter(  ) ).
+        zcl_otel_daemon_config=>get( i_context_base->get_start_parameter(  ) ).
 
       catch cx_root.
 
@@ -73,10 +77,10 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
 
   method if_abap_daemon_extension~on_error.
 
-*    try.
-*        set_timer( ).
-*      catch cx_abap_timer_error.
-*    endtry.
+    try.
+        set_timer( i_context ).
+      catch cx_abap_timer_error.
+    endtry.
 
   endmethod.
 
@@ -86,7 +90,7 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
     try.
         case i_message->get_field( 'command' ).
           when 'export'.
-            export(  ).
+            export( zcl_otel_daemon_config=>get( i_context->get_start_parameter(  ) ) ).
         endcase.
       catch cx_static_check into data(lo_cx).
         "handle exception
@@ -99,8 +103,7 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
 
 
     try.
-        me->config = zcl_otel_daemon_config=>get( i_context->get_start_parameter(  ) ).
-        set_timer(  ).
+        set_timer( i_context ).
       catch cx_abap_timer_error.
       catch cx_abap_daemon_error.
       catch cx_ac_message_type_pcp_error.
@@ -118,8 +121,7 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
   method if_abap_daemon_extension~on_start.
 
     try.
-        me->config = zcl_otel_daemon_config=>get( i_context->get_start_parameter(  ) ).
-        set_timer(  ).
+        set_timer( i_context  ).
       catch cx_abap_timer_error.
       catch cx_abap_daemon_error.
       catch cx_ac_message_type_pcp_error.
@@ -132,8 +134,7 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
 
 
     try.
-        me->config = zcl_otel_daemon_config=>get( i_context->get_start_parameter(  ) ).
-        set_timer(  ).
+        set_timer( i_context  ).
       catch cx_abap_timer_error.
       catch cx_abap_daemon_error.
       catch cx_ac_message_type_pcp_error.
@@ -146,7 +147,7 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
   method if_abap_daemon_extension~on_system_shutdown.
 
     try.
-        export( ).
+        export( zcl_otel_daemon_config=>get( i_context->get_start_parameter(  ) ) ).
       catch cx_static_check.
     endtry.
 
@@ -155,9 +156,9 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
 
   method export.
 
-    check me->config is bound.
+    check config is bound.
 
-    data(publisher) = me->config->publisher( ).
+    data(publisher) = config->publisher( ).
 
     data(entry_handler) = new zcl_otel_rtm_handler( stream = publisher ).
 
@@ -178,6 +179,8 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
 
   method set_timer.
 
+    me->context = context.
+
     " every 30 seconds
     cl_abap_timer_manager=>get_timer_manager( )->start_timer(
       i_timer_handler = me                 " ABAP Timer handler
@@ -191,8 +194,8 @@ CLASS ZCL_OTEL_DAEMON_RTM IMPLEMENTATION.
 
     try.
 
-        me->export( ).
-        set_timer( ).
+        me->export( zcl_otel_daemon_config=>get( me->context->get_start_parameter(  ) ) ).
+        set_timer( me->context ).
 
       catch cx_static_check into data(lo_cx).
 
